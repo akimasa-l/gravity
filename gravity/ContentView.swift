@@ -22,53 +22,12 @@ struct ContentView: View {
 
     var body: some View {
         Grid(horizontalSpacing: 5, verticalSpacing: 5) {
-            GridRow {
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-            }
-            GridRow {
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-            }
-            GridRow {
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-            }
-            GridRow {
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-            }
-            GridRow {
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-            }
-            GridRow {
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
-                MyGridItem()
+            ForEach(0..<10){_ in
+                GridRow {
+                    ForEach(0..<10){_ in
+                        MyGridItem()
+                    }
+                }
             }
         }
     }
