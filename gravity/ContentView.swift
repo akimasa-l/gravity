@@ -8,24 +8,39 @@
 import SwiftUI
 import SwiftData
 
-struct MyGridItem:View {
+struct Ball:Hashable{}
+
+struct MyGridItemData:Hashable{
+    var index_i:Int
+    var index_j:Int
+}
+
+struct MyGridItemView:View {
+    var myGridItemData:MyGridItemData?
     var body: some View {
-        RoundedRectangle(cornerSize: .init(width: 3, height: 3))
-            .frame(width: 30, height: 30)
-            .foregroundColor(.blue)
+        if myGridItemData != nil{
+            RoundedRectangle(cornerSize: .init(width: 3, height: 3))
+                .frame(width: 30, height: 30)
+                .foregroundColor(.blue)
+        }else{
+            RoundedRectangle(cornerSize: .init(width: 3, height: 3))
+                .frame(width: 30, height: 30)
+                .foregroundColor(.gray)
+        }
+    }
+    init(myGridItemData: MyGridItemData? = nil) {
+        self.myGridItemData = myGridItemData
     }
 }
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    var myGridItemDataList: [[MyGridItemData?]] = [[MyGridItemData(index_i: 0, index_j: 0),nil,nil,nil]]
     var body: some View {
         Grid(horizontalSpacing: 5, verticalSpacing: 5) {
-            ForEach(0..<10){_ in
+            ForEach(myGridItemDataList,id:\.self){i in
                 GridRow {
-                    ForEach(0..<10){_ in
-                        MyGridItem()
+                    ForEach(i,id: \.self){j in
+                        MyGridItemView(myGridItemData:j)
                     }
                 }
             }
