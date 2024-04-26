@@ -45,10 +45,12 @@ let j_count=20
 let probability = 0.1
 
 let mass = 1.0
-let threshold = 0.1
+let threshold = 0.07
 let friction = 0.03
-let bounce = 0.6
-let interval = 0.1
+let bounce_wall = 0.5
+let bounce_ball = 0.5
+let interval = 1.0/10.0
+let debug = false
 
 struct ContentView: View {
     @State var myGridItemDataList: [[MyGridItemData]] = (0..<i_count).map{
@@ -66,14 +68,35 @@ struct ContentView: View {
     @State var a_x = 0.0
     @State var a_y = 0.0
     var body: some View {
-        Grid(horizontalSpacing: 5, verticalSpacing: 5) {
-            ForEach(myGridItemDataList,id:\.self){ i in
-                GridRow {
-                    ForEach(i,id: \.self){ j in
-                        MyGridItemView(myGridItemData:j)
+        VStack{
+            Grid(horizontalSpacing: 5, verticalSpacing: 5) {
+                ForEach(myGridItemDataList,id:\.self){ i in
+                    GridRow {
+                        ForEach(i,id: \.self){ j in
+                            MyGridItemView(myGridItemData:j)
+                        }
                     }
                 }
             }
+            if debug{
+                Grid(horizontalSpacing: 5, verticalSpacing: 5) {
+                    ForEach(myGridItemDataList,id:\.self){ i in
+                        GridRow {
+                            ForEach(i,id: \.self){ j in
+                                if(j.ball==nil){
+                                    Text("null")
+                                }else{
+                                    VStack{
+                                        Text("Vx:\(j.ball!.v_x)")
+                                        Text("Vy:\(j.ball!.v_y)")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
         }.onAppear{
             if motionManager.isDeviceMotionAvailable {
                 motionManager.accelerometerUpdateInterval = interval
@@ -88,65 +111,95 @@ struct ContentView: View {
         }
     }
     func update(){
-        for i in myGridItemDataList{
+        var newMyGridItemDataList = myGridItemDataList
+        for i in newMyGridItemDataList{
             for j in i{
                 guard var ball = j.ball else{continue}
+                
+                if ball.v_x > 0 && j.index_j+1 < j_count && newMyGridItemDataList[j.index_i][j.index_j+1].ball != nil{
+                    //右にボールがあるとき
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x = newMyGridItemDataList[j.index_i][j.index_j+1].ball!.v_x * bounce_ball
+                    //                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y = newMyGridItemDataList[j.index_i][j.index_j+1].ball!.v_y * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j+1].ball!.v_x = ball.v_x * bounce_ball
+                    //                    newMyGridItemDataList[j.index_i][j.index_j+1].ball!.v_x = ball.v_y * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x += a_x * interval
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y += a_y * interval
+                    continue
+                }
+                if ball.v_x < 0 && j.index_j-1 >= 0 && newMyGridItemDataList[j.index_i][j.index_j-1].ball != nil{
+                    //左にボールがあるとき
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x = newMyGridItemDataList[j.index_i][j.index_j-1].ball!.v_x * bounce_ball
+                    //                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y = newMyGridItemDataList[j.index_i][j.index_j-1].ball!.v_y * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j-1].ball!.v_x = ball.v_x
+                    //                    newMyGridItemDataList[j.index_i][j.index_j-1].ball!.v_x = ball.v_y * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x += a_x * interval
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y += a_y * interval
+                    continue
+                }
+                if ball.v_y > 0 && j.index_i+1 < i_count && newMyGridItemDataList[j.index_i+1][j.index_j].ball != nil{
+                    //下にボールがあるとき
+                    //                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x = newMyGridItemDataList[j.index_i+1][j.index_j].ball!.v_x * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y = newMyGridItemDataList[j.index_i+1][j.index_j].ball!.v_y * bounce_ball
+                    //                    newMyGridItemDataList[j.index_i+1][j.index_j].ball!.v_x = ball.v_x * bounce_ball
+                    newMyGridItemDataList[j.index_i+1][j.index_j].ball!.v_x = ball.v_y * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x += a_x * interval
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y += a_y * interval
+                    continue
+                }
+                if ball.v_y < 0 && j.index_i-1 >= 0 && newMyGridItemDataList[j.index_i-1][j.index_j].ball != nil{
+                    //上にボールがあるとき
+                    //                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x = newMyGridItemDataList[j.index_i-1][j.index_j].ball!.v_x * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y = newMyGridItemDataList[j.index_i-1][j.index_j].ball!.v_y * bounce_ball
+                    //                    newMyGridItemDataList[j.index_i-1][j.index_j].ball!.v_x = ball.v_x * bounce_ball
+                    newMyGridItemDataList[j.index_i-1][j.index_j].ball!.v_x = ball.v_y * bounce_ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_x += a_x * interval
+                    newMyGridItemDataList[j.index_i][j.index_j].ball!.v_y += a_y * interval
+                    continue
+                }
+                
+                
                 ball.v_x += a_x * interval
                 ball.v_y += a_y * interval
-                if ball.v_x*mass > threshold {
-                    if j.index_j+1 >= j_count{
-                        ball.v_x = ball.v_x * (-0.8)
-                        myGridItemDataList[j.index_i][j.index_j].ball = ball
-                        continue
-                    }
-                    if myGridItemDataList[j.index_i][j.index_j+1].ball == nil{
-                        ball.v_x -= friction/mass
-                        myGridItemDataList[j.index_i][j.index_j+1].ball = ball
-                        myGridItemDataList[j.index_i][j.index_j].ball = nil
-                    }
-                } else if ball.v_x*mass < (-threshold){
-                    if j.index_j-1 < 0{
-                        ball.v_x = ball.v_x * (-0.8)
-                        myGridItemDataList[j.index_i][j.index_j].ball = ball
-                        continue
-                    }
-                    if myGridItemDataList[j.index_i][j.index_j-1].ball == nil{
-                        ball.v_x += friction/mass
-                        myGridItemDataList[j.index_i][j.index_j-1].ball = ball
-                        myGridItemDataList[j.index_i][j.index_j].ball = nil
-                    }
-                } else if ball.v_y*mass > threshold{
-                    if j.index_i+1 >= i_count{
-                        ball.v_y = ball.v_y * (-0.8)
-                        myGridItemDataList[j.index_i][j.index_j].ball = ball
-                        continue
-                    }
-                    if myGridItemDataList[j.index_i+1][j.index_j].ball == nil{
-                        ball.v_y -= friction/mass
-                        myGridItemDataList[j.index_i+1][j.index_j].ball = ball
-                        myGridItemDataList[j.index_i][j.index_j].ball = nil
-                    }
-                } else if ball.v_y*mass < (-threshold){
-                    if j.index_i-1 < 0{
-                        ball.v_y = ball.v_y * (-0.8)
-                        myGridItemDataList[j.index_i][j.index_j].ball = ball
-                        continue
-                    }
-                    if myGridItemDataList[j.index_i-1][j.index_j].ball == nil{
-                        ball.v_y += friction/mass
-                        myGridItemDataList[j.index_i-1][j.index_j].ball = ball
-                        myGridItemDataList[j.index_i][j.index_j].ball = nil
-                    }
-                } else {
-                    if j.index_i-1 < 0 || j.index_i+1 >= i_count{
-                        ball.v_y=0.0
-                    }
-                    if j.index_j-1 < 0 || j.index_j+1 >= j_count{
-                        ball.v_x=0.0
-                    }
-                    myGridItemDataList[j.index_i][j.index_j].ball = ball
+                newMyGridItemDataList[j.index_i][j.index_j].ball = ball
+                if (j.index_j+1 >= j_count && ball.v_x > 0) || (j.index_j-1 < 0 && ball.v_x < 0) {
+                    // 壁に跳ね返ったとき
+                    ball.v_x = ball.v_x * (-bounce_wall)
+                    newMyGridItemDataList[j.index_i][j.index_j].ball = ball
+                    //                    continue
+                }
+                if (j.index_i+1 >= i_count && ball.v_y > 0) || (j.index_i-1 < 0 && ball.v_y < 0){
+                    // 壁に跳ね返ったとき
+                    ball.v_y = ball.v_y * (-bounce_wall)
+                    newMyGridItemDataList[j.index_i][j.index_j].ball = ball
+                    //                    continue
+                }
+                
+                if ball.v_x*mass > threshold && j.index_j+1 < j_count && newMyGridItemDataList[j.index_i][j.index_j+1].ball == nil{
+                    ball.v_x -= friction/mass
+                    newMyGridItemDataList[j.index_i][j.index_j+1].ball = ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball = nil
+                    continue
+                }
+                if ball.v_x*mass < (-threshold) && j.index_j-1 >= 0 && newMyGridItemDataList[j.index_i][j.index_j-1].ball == nil{
+                    ball.v_x += friction/mass
+                    newMyGridItemDataList[j.index_i][j.index_j-1].ball = ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball = nil
+                    continue
+                }
+                if ball.v_y*mass > threshold && j.index_i+1 < i_count && newMyGridItemDataList[j.index_i+1][j.index_j].ball == nil{
+                    ball.v_y -= friction/mass
+                    newMyGridItemDataList[j.index_i+1][j.index_j].ball = ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball = nil
+                    continue
+                }
+                if ball.v_y*mass < (-threshold) && j.index_i-1 >= 0 && newMyGridItemDataList[j.index_i-1][j.index_j].ball == nil{
+                    ball.v_y += friction/mass
+                    newMyGridItemDataList[j.index_i-1][j.index_j].ball = ball
+                    newMyGridItemDataList[j.index_i][j.index_j].ball = nil
+                    continue
                 }
             }
         }
+        myGridItemDataList = newMyGridItemDataList
     }
 }
